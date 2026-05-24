@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/config/app_config.dart';
+import '../core/mock/mock_backend.dart';
 import '../main.dart';
 
 class ProfileStats {
@@ -17,6 +19,14 @@ class ProfileStats {
 final profileStatsProvider = FutureProvider.autoDispose<ProfileStats>((
   ref,
 ) async {
+  if (AppConfig.useMock) {
+    final s = MockBackend.instance.statsSnapshot();
+    return ProfileStats(
+      misionesCompletadas: s.misiones,
+      capsulasAsistidas: s.capsulas,
+      diasEnSouls: s.dias,
+    );
+  }
   final user = supabase.auth.currentUser;
   if (user == null) throw StateError('No hay sesión');
 

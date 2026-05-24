@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../main.dart';
+import '../../core/config/app_config.dart';
+import '../../core/mock/mock_session.dart';
 import '../../providers/auth_provider.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/splash_screen.dart';
@@ -29,13 +31,20 @@ import '../../screens/shell/main_shell.dart';
 /// Escucha cambios de auth de Supabase y notifica al router para que
 /// re-ejecute la lógica de redirect.
 class _AuthRefreshNotifier extends ChangeNotifier {
-  late final StreamSubscription<AuthState> _sub;
+  StreamSubscription<AuthState>? _sub;
   _AuthRefreshNotifier() {
-    _sub = supabase.auth.onAuthStateChange.listen((_) => notifyListeners());
+    if (AppConfig.useMock) {
+      MockSession.instance.addListener(notifyListeners);
+    } else {
+      _sub = supabase.auth.onAuthStateChange.listen((_) => notifyListeners());
+    }
   }
   @override
   void dispose() {
-    _sub.cancel();
+    _sub?.cancel();
+    if (AppConfig.useMock) {
+      MockSession.instance.removeListener(notifyListeners);
+    }
     super.dispose();
   }
 }
@@ -49,7 +58,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/splash',
     refreshListenable: Listenable.merge([authRefresh, flag]),
     redirect: (context, state) async {
-      final user = supabase.auth.currentUser;
+      final loggedIn = AppConfig.useMock
+          ? MockSession.instance.isLoggedIn
+          : supabase.auth.currentUser != null;
+      final userId = AppConfig.useMock
+          ? MockSession.instance.userId
+          : supabase.auth.currentUser?.id;
       final loc = state.uri.path;
 
       final isLogin = loc == '/login';
@@ -57,12 +71,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isOnboarding = loc == '/onboarding';
 
       // 1. Sin sesión → login
-      if (user == null) {
+      if (!loggedIn) {
         return isLogin ? null : '/login';
       }
 
       // 2. Con sesión: resolver onboarding
-      final done = await flag.ensure(user.id);
+      final done = await flag.ensure(userId!);
 
       if (!done) {
         return isOnboarding ? null : '/onboarding';

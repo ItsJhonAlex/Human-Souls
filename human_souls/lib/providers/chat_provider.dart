@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/config/app_config.dart';
+import '../core/mock/mock_backend.dart';
 import '../main.dart';
 import '../models/chat.dart';
 
 /// Inbox ordenado por el último mensaje. Lee de la vista chat_inbox.
 final inboxProvider = FutureProvider.autoDispose<List<InboxItem>>((ref) async {
+  if (AppConfig.useMock) return MockBackend.instance.inbox();
   final rows = await supabase
       .from('chat_inbox')
       .select()
@@ -20,6 +23,7 @@ final inboxRealtimeProvider = Provider.autoDispose<Object?>((ref) {
 /// Stream de los mensajes de un chat (último 100), realtime vía `.stream()`.
 final messagesProvider = StreamProvider.autoDispose
     .family<List<Message>, String>((ref, chatId) {
+      if (AppConfig.useMock) return MockBackend.instance.messagesStream(chatId);
       return supabase
           .from('mensajes')
           .stream(primaryKey: ['id'])
@@ -31,6 +35,9 @@ final messagesProvider = StreamProvider.autoDispose
 
 /// Encuentra o crea un chat con otro usuario y devuelve su id.
 Future<String> findOrCreateChat(String otherUserId) async {
+  if (AppConfig.useMock) {
+    return MockBackend.instance.findOrCreateChat(otherUserId);
+  }
   final res = await supabase.rpc(
     'find_or_create_chat',
     params: {'p_other_user_id': otherUserId},
@@ -42,6 +49,10 @@ Future<void> sendMessage({
   required String chatId,
   required String content,
 }) async {
+  if (AppConfig.useMock) {
+    MockBackend.instance.sendMessage(chatId: chatId, content: content);
+    return;
+  }
   final user = supabase.auth.currentUser!;
   await supabase.from('mensajes').insert({
     'chat_id': chatId,
@@ -51,12 +62,19 @@ Future<void> sendMessage({
 }
 
 Future<void> markChatAsRead(String chatId) async {
+  if (AppConfig.useMock) {
+    MockBackend.instance.markChatAsRead(chatId);
+    return;
+  }
   await supabase.rpc('mark_messages_read', params: {'p_chat_id': chatId});
 }
 
 /// Perfil público resumido del otro usuario (para el header del chat).
 final otherUserProfileProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>, String>((ref, userId) async {
+      if (AppConfig.useMock) {
+        return MockBackend.instance.otherUserProfile(userId);
+      }
       final row = await supabase
           .from('profiles')
           .select(

@@ -7,10 +7,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/config/theme.dart';
+import '../../core/mock/mock_backend.dart';
 import '../../main.dart';
 import '../../models/profile.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/buddy_dashboard_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/rueda_vida_provider.dart';
 import '../../providers/stats_provider.dart';
@@ -63,6 +66,10 @@ class _PerfilBody extends ConsumerWidget {
         children: [
           _PerfilHeader(profile: profile),
           const SizedBox(height: 20),
+          if (AppConfig.useMock) ...[
+            const _DemoPersonaCard(),
+            const SizedBox(height: 16),
+          ],
           _AvatarBlock(profile: profile),
           const SizedBox(height: 16),
           _LevelCard(profile: profile),
@@ -133,6 +140,14 @@ class _AvatarBlockState extends ConsumerState<_AvatarBlock> {
   bool _uploading = false;
 
   Future<void> _pickAndUpload() async {
+    if (AppConfig.useMock) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Subir foto estará disponible al conectar el backend'),
+        ),
+      );
+      return;
+    }
     final picker = ImagePicker();
     final file = await picker.pickImage(
       source: ImageSource.gallery,
@@ -782,6 +797,91 @@ class _LogoutButton extends ConsumerWidget {
 }
 
 // =====================================================================
+// SELECTOR DE PERSONA (solo modo demo)
+// =====================================================================
+class _DemoPersonaCard extends ConsumerWidget {
+  const _DemoPersonaCard();
+
+  void _select(WidgetRef ref, DemoPersona persona) {
+    MockBackend.instance.setPersona(persona);
+    ref.invalidate(currentProfileProvider);
+    ref.invalidate(profileStatsProvider);
+    ref.invalidate(buddyDashboardProvider);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(currentProfileProvider).asData?.value;
+    final isBuddy = profile?.isBuddy ?? false;
+    final isMember = profile?.membershipStatus == 'active';
+    final current = isBuddy
+        ? DemoPersona.buddy
+        : (isMember ? DemoPersona.member : DemoPersona.free);
+
+    Widget chip(String label, DemoPersona p) {
+      final selected = current == p;
+      return Expanded(
+        child: GestureDetector(
+          onTap: () => _select(ref, p),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              gradient: selected ? SoulColors.ctaGradient : null,
+              color: selected ? null : SoulColors.glass,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: selected ? Colors.transparent : SoulColors.glassBorder,
+              ),
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : SoulColors.textSecondary,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.science_outlined, size: 16, color: SoulColors.gold),
+              SizedBox(width: 6),
+              Text(
+                'MODO DEMO · PERSONA',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.3,
+                  color: SoulColors.gold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              chip('Free', DemoPersona.free),
+              chip('Miembro', DemoPersona.member),
+              chip('Buddy', DemoPersona.buddy),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =====================================================================
 // EDIT PROFILE SHEET
 // =====================================================================
 void _showEditProfileSheet(
@@ -808,6 +908,15 @@ void _showEditProfileSheet(
               error = null;
             });
             try {
+              if (AppConfig.useMock) {
+                MockBackend.instance.updateProfile(
+                  fullName: nameCtrl.text.trim(),
+                  bio: bioCtrl.text.trim().isEmpty ? null : bioCtrl.text.trim(),
+                );
+                ref.invalidate(currentProfileProvider);
+                if (ctx.mounted) Navigator.pop(ctx);
+                return;
+              }
               await supabase
                   .from('profiles')
                   .update({

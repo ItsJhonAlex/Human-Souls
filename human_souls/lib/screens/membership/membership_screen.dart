@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/config/theme.dart';
+import '../../core/mock/mock_backend.dart';
 import '../../core/services/membership_service.dart';
 import '../../providers/profile_provider.dart';
 import '../capsulas/checkout_sheet.dart' show showCheckoutWebView;
@@ -34,6 +36,16 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
           : await membershipService.createMercadoPagoSubscription(
               plan: _selectedPlan,
             );
+
+      if (AppConfig.useMock) {
+        MockBackend.instance.activateMembership(_selectedPlan);
+        ref.invalidate(currentProfileProvider);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Membresía simulada activada ✨')),
+        );
+        return;
+      }
 
       if (!mounted) return;
 
@@ -84,6 +96,17 @@ class _MembershipScreenState extends ConsumerState<MembershipScreen> {
 
     setState(() => _busy = true);
     try {
+      if (AppConfig.useMock) {
+        MockBackend.instance.cancelMembership();
+        ref.invalidate(currentProfileProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Suscripción cancelada (demo).')),
+          );
+        }
+        setState(() => _busy = false);
+        return;
+      }
       await membershipService.cancelSubscription();
       ref.invalidate(currentProfileProvider);
       if (mounted) {

@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/config/app_config.dart';
+import '../core/mock/mock_backend.dart';
 import '../main.dart';
 import '../models/buddy_dashboard.dart';
 
 /// Dashboard con totales del Buddy actual.
 final buddyDashboardProvider =
     FutureProvider.autoDispose<BuddyDashboard>((ref) async {
+  if (AppConfig.useMock) return MockBackend.instance.buddyDashboard();
   final user = supabase.auth.currentUser;
   if (user == null) throw StateError('No hay sesión');
   final row = await supabase
@@ -22,6 +25,7 @@ final buddyDashboardProvider =
 /// Ingresos mensuales — últimos 12 meses con datos.
 final buddyMonthlyIncomeProvider =
     FutureProvider.autoDispose<List<BuddyMonthlyIncome>>((ref) async {
+  if (AppConfig.useMock) return MockBackend.instance.buddyMonthlyIncome();
   final user = supabase.auth.currentUser;
   if (user == null) return [];
   final rows = await supabase
@@ -36,6 +40,7 @@ final buddyMonthlyIncomeProvider =
 /// Próximas cápsulas que facilita el Buddy.
 final buddyUpcomingCapsulasProvider =
     FutureProvider.autoDispose<List<BuddyUpcomingCapsula>>((ref) async {
+  if (AppConfig.useMock) return MockBackend.instance.buddyUpcomingCapsulas();
   final user = supabase.auth.currentUser;
   if (user == null) return [];
   final rows = await supabase
@@ -58,6 +63,21 @@ Future<String> createCapsula({
   required bool includedInMembership,
   String? meetingLink,
 }) async {
+  if (AppConfig.useMock) {
+    final id = MockBackend.instance.createCapsula(
+      title: title,
+      description: description,
+      startsAt: startsAt,
+      duration: duration,
+      capacity: capacity,
+      priceUsd: priceUsd,
+      includedInMembership: includedInMembership,
+      meetingLink: meetingLink,
+    );
+    ref.invalidate(buddyUpcomingCapsulasProvider);
+    ref.invalidate(buddyDashboardProvider);
+    return id;
+  }
   final user = supabase.auth.currentUser!;
   final inserted = await supabase.from('capsulas').insert({
     'host_id': user.id,

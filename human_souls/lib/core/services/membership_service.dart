@@ -1,4 +1,5 @@
 import '../../main.dart';
+import '../config/app_config.dart';
 
 /// Sesión de checkout para una suscripción.
 class SubscriptionCheckout {
@@ -18,6 +19,9 @@ class MembershipService {
   Future<SubscriptionCheckout> createStripeSubscription({
     required String plan,
   }) async {
+    if (AppConfig.useMock) {
+      return SubscriptionCheckout(url: '', provider: 'mock', referenceId: plan);
+    }
     final res = await supabase.functions.invoke(
       'create-stripe-subscription',
       body: {'plan': plan},
@@ -38,6 +42,9 @@ class MembershipService {
   Future<SubscriptionCheckout> createMercadoPagoSubscription({
     required String plan,
   }) async {
+    if (AppConfig.useMock) {
+      return SubscriptionCheckout(url: '', provider: 'mock', referenceId: plan);
+    }
     final res = await supabase.functions.invoke(
       'create-mp-preapproval',
       body: {'plan': plan},
@@ -56,6 +63,7 @@ class MembershipService {
   /// Cancela la suscripción activa del usuario.
   /// Deja acceso hasta el fin del período por defecto.
   Future<void> cancelSubscription({bool immediately = false}) async {
+    if (AppConfig.useMock) return;
     final res = await supabase.functions.invoke(
       'cancel-subscription',
       body: {'immediately': immediately},

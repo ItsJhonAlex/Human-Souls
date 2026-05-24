@@ -4,12 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/config/app_config.dart';
+import '../core/mock/mock_backend.dart';
 import '../main.dart';
 import '../models/mision.dart';
+import 'profile_provider.dart';
+import 'stats_provider.dart';
 
 /// Todas las misiones activas agrupadas por tipo.
 final misionesPorTipoProvider =
     FutureProvider.autoDispose<Map<MisionTipo, List<Mision>>>((ref) async {
+      if (AppConfig.useMock) return MockBackend.instance.misionesPorTipo();
       final rows = await supabase
           .from('misiones')
           .select()
@@ -32,6 +37,9 @@ final misionesPorTipoProvider =
 /// Devuelve un Map misionId -> MisionCompletada (la última del período).
 final misCompletadasDelPeriodoProvider =
     FutureProvider.autoDispose<Map<String, MisionCompletada>>((ref) async {
+      if (AppConfig.useMock) {
+        return MockBackend.instance.misCompletadasDelPeriodo();
+      }
       final user = supabase.auth.currentUser;
       if (user == null) return {};
 
@@ -68,6 +76,7 @@ final misCompletadasDelPeriodoProvider =
 /// Cola de validación para Buddies: completadas ajenas pendientes.
 final validationQueueProvider =
     FutureProvider.autoDispose<List<MisionCompletada>>((ref) async {
+      if (AppConfig.useMock) return MockBackend.instance.validationQueue();
       final user = supabase.auth.currentUser;
       if (user == null) return [];
 
@@ -91,6 +100,14 @@ Future<MisionCompletada> submitMision({
   Uint8List? evidenceFileBytes,
   String? evidenceFileExt,
 }) async {
+  if (AppConfig.useMock) {
+    final mc = MockBackend.instance
+        .submitMision(mision: mision, evidenceText: evidenceText);
+    ref.invalidate(misCompletadasDelPeriodoProvider);
+    ref.invalidate(currentProfileProvider);
+    ref.invalidate(profileStatsProvider);
+    return mc;
+  }
   final user = supabase.auth.currentUser!;
   String? evidenceUrl;
 
@@ -139,6 +156,12 @@ Future<void> validateMision({
   required String completionId,
   required bool approve,
 }) async {
+  if (AppConfig.useMock) {
+    MockBackend.instance
+        .validateMision(completionId: completionId, approve: approve);
+    ref.invalidate(validationQueueProvider);
+    return;
+  }
   final user = supabase.auth.currentUser!;
 
   if (approve) {

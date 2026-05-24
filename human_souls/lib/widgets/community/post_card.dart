@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../core/config/theme.dart';
-import '../../main.dart';
+import '../../core/current_user.dart';
 import '../../models/post.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/community_provider.dart';
@@ -129,7 +129,7 @@ class _Header extends StatelessWidget {
   const _Header({required this.post});
 
   Future<void> _openChat(BuildContext context) async {
-    final meId = supabase.auth.currentUser?.id;
+    final meId = currentUserId();
     if (meId == null || meId == post.userId) return;
     try {
       final chatId = await findOrCreateChat(post.userId);
@@ -148,7 +148,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final initial = (post.authorName ?? 'S').substring(0, 1).toUpperCase();
-    final meId = supabase.auth.currentUser?.id;
+    final meId = currentUserId();
     final canChat = meId != null && meId != post.userId;
 
     return Row(

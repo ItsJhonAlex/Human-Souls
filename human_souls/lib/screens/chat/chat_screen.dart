@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/config/theme.dart';
-import '../../main.dart';
+import '../../core/current_user.dart';
 import '../../providers/chat_provider.dart';
 import '../../widgets/chat/message_bubble.dart';
 import '../../widgets/common/gradient_background.dart';
@@ -88,7 +88,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     final otherProfile = ref.watch(
       otherUserProfileProvider(widget.otherUserId),
     );
-    final meId = supabase.auth.currentUser?.id;
+    final meId = currentUserId();
 
     // Marcar leídos cuando llega un mensaje nuevo ajeno.
     ref.listen(messagesProvider(widget.chatId), (_, next) {

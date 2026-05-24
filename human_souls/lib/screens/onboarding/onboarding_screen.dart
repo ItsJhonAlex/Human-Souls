@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/config/theme.dart';
+import '../../core/mock/mock_backend.dart';
 import '../../main.dart';
+import '../../models/mision.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/common/glass_card.dart';
 import '../../widgets/common/gradient_background.dart';
@@ -34,6 +37,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
+    if (AppConfig.useMock) {
+      _nameCtrl.text = MockBackend.instance.profile.fullName ?? '';
+      return;
+    }
     // Prefill con lo que venga del provider OAuth o del signup.
     final user = supabase.auth.currentUser;
     final metaName = user?.userMetadata?['full_name'] as String?;
@@ -90,6 +97,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _error = null;
     });
     try {
+      if (AppConfig.useMock) {
+        MockBackend.instance
+            .updateProfile(fullName: name, username: username.toLowerCase());
+        _next();
+        return;
+      }
       final user = supabase.auth.currentUser!;
       await supabase.from('profiles').update({
         'full_name': name,
@@ -117,6 +130,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _error = null;
     });
     try {
+      if (AppConfig.useMock) {
+        final mb = MockBackend.instance;
+        final mision = mb.misionesPorTipo()[MisionTipo.daily]!
+            .firstWhere((m) => m.id == 'mis-intencion');
+        mb.createPost(content: intention, missionId: mision.id);
+        mb.submitMision(
+            mision: mision, evidenceText: intention, forceValidated: true);
+        _awardedXp = mision.xpReward;
+        _awardedSp = mision.soulPointsReward;
+        ref.read(onboardingFlagProvider).markCompleted();
+        if (mounted) _next();
+        return;
+      }
       final user = supabase.auth.currentUser!;
 
       // 1. Buscar la misión "Escribí tu intención"

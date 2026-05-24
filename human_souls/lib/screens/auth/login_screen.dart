@@ -44,16 +44,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       if (_isSignUp) {
-        final res = await auth.signUpWithEmail(
+        await auth.signUpWithEmail(
           email: _emailCtrl.text,
           password: _passCtrl.text,
           fullName: _nameCtrl.text,
         );
-        if (res.session == null && mounted) {
-          setState(
-            () => _error = 'Te enviamos un mail para confirmar tu cuenta.',
-          );
-        }
       } else {
         await auth.signInWithEmail(
           email: _emailCtrl.text,

@@ -13,6 +13,7 @@ class Profile {
   final bool isFounderBuddy;
   final String membershipStatus; // free, active, cancelled, trialing
   final String? membershipPlan;
+  final String? membershipProvider; // stripe | mercadopago
   final DateTime? membershipExpiresAt;
   final bool onboardingCompleted;
 
@@ -31,6 +32,7 @@ class Profile {
     this.isFounderBuddy = false,
     this.membershipStatus = 'free',
     this.membershipPlan,
+    this.membershipProvider,
     this.membershipExpiresAt,
     this.onboardingCompleted = false,
   });
@@ -50,6 +52,7 @@ class Profile {
         isFounderBuddy: (m['is_founder_buddy'] ?? false) as bool,
         membershipStatus: (m['membership_status'] ?? 'free') as String,
         membershipPlan: m['membership_plan'] as String?,
+        membershipProvider: m['membership_provider'] as String?,
         membershipExpiresAt: m['membership_expires_at'] != null
             ? DateTime.parse(m['membership_expires_at'] as String)
             : null,

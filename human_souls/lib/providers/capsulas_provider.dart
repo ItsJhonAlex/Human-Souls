@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/config/app_config.dart';
+import '../core/mock/mock_backend.dart';
 import '../main.dart';
 import '../models/capsula.dart';
 
@@ -7,6 +9,7 @@ import '../models/capsula.dart';
 final upcomingCapsulasProvider = FutureProvider.autoDispose<List<Capsula>>((
   ref,
 ) async {
+  if (AppConfig.useMock) return MockBackend.instance.upcomingCapsulas();
   final now = DateTime.now().toIso8601String();
   final rows = await supabase
       .from('capsulas')
@@ -22,6 +25,7 @@ final upcomingCapsulasProvider = FutureProvider.autoDispose<List<Capsula>>((
 final pastCapsulasProvider = FutureProvider.autoDispose<List<Capsula>>((
   ref,
 ) async {
+  if (AppConfig.useMock) return MockBackend.instance.pastCapsulas();
   final user = supabase.auth.currentUser;
   if (user == null) return [];
 
@@ -46,6 +50,7 @@ final pastCapsulasProvider = FutureProvider.autoDispose<List<Capsula>>((
 /// Detalle de una cápsula por id.
 final capsulaDetailProvider = FutureProvider.autoDispose
     .family<Capsula, String>((ref, id) async {
+      if (AppConfig.useMock) return MockBackend.instance.capsulaDetail(id);
       final row = await supabase
           .from('capsulas')
           .select('*, host:host_id(full_name, avatar_url)')
@@ -57,6 +62,7 @@ final capsulaDetailProvider = FutureProvider.autoDispose
 /// Mis inscripciones (map capsulaId -> inscripción).
 final myInscripcionesProvider =
     FutureProvider.autoDispose<Map<String, CapsulaInscripcion>>((ref) async {
+      if (AppConfig.useMock) return MockBackend.instance.myInscripciones();
       final user = supabase.auth.currentUser;
       if (user == null) return {};
       final rows = await supabase
@@ -74,6 +80,11 @@ Future<CapsulaInscripcion> inscribirGratis({
   required WidgetRef ref,
   required Capsula capsula,
 }) async {
+  if (AppConfig.useMock) {
+    final insc = MockBackend.instance.inscribir(capsula.id, paid: true);
+    ref.invalidate(myInscripcionesProvider);
+    return insc;
+  }
   final user = supabase.auth.currentUser!;
   final row = await supabase
       .from('capsula_inscripciones')
@@ -93,6 +104,11 @@ Future<void> cancelarInscripcion({
   required WidgetRef ref,
   required String capsulaId,
 }) async {
+  if (AppConfig.useMock) {
+    MockBackend.instance.cancelarInscripcion(capsulaId);
+    ref.invalidate(myInscripcionesProvider);
+    return;
+  }
   final user = supabase.auth.currentUser!;
   await supabase
       .from('capsula_inscripciones')

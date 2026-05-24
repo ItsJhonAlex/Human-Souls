@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/config/theme.dart';
+import '../../core/mock/mock_backend.dart';
 import '../../core/services/payments_service.dart';
 import '../../models/capsula.dart';
 import '../../providers/capsulas_provider.dart';
@@ -49,6 +51,22 @@ class _CheckoutSheetState extends ConsumerState<CheckoutSheet> {
               capsulaId: widget.capsula.id)
           : await paymentsService.createStripeCheckout(
               capsulaId: widget.capsula.id);
+
+      if (AppConfig.useMock) {
+        MockBackend.instance.inscribir(widget.capsula.id, paid: true);
+        ref.invalidate(myInscripcionesProvider);
+        if (!mounted) return;
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: SoulColors.turquoise,
+            content: Text('Pago simulado: ¡inscripción confirmada! ✨',
+                style: TextStyle(
+                    color: SoulColors.deepBlue, fontWeight: FontWeight.w700)),
+          ),
+        );
+        return;
+      }
 
       if (!mounted) return;
       Navigator.pop(context);

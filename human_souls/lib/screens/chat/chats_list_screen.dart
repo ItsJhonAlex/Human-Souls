@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/config/theme.dart';
-import '../../main.dart';
+import '../../core/current_user.dart';
 import '../../models/chat.dart';
 import '../../providers/chat_provider.dart';
 import '../../widgets/common/glass_card.dart';
@@ -141,7 +141,7 @@ class _InboxTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final meId = supabase.auth.currentUser?.id;
+    final meId = currentUserId();
     final lastIsMine = item.lastMessageSenderId == meId;
     final initial = (item.otherUserName ?? 'S').substring(0, 1).toUpperCase();
 

@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../core/config/app_config.dart';
+import '../core/mock/mock_backend.dart';
 import '../main.dart';
 import '../models/post.dart';
 
@@ -19,6 +21,7 @@ author:user_id (full_name, avatar_url)
 
 /// Feed global — últimos 50 posts, ordenados por fecha desc.
 final feedProvider = FutureProvider.autoDispose<List<Post>>((ref) async {
+  if (AppConfig.useMock) return MockBackend.instance.feed();
   final rows = await supabase
       .from('posts')
       .select(_postSelect)
@@ -36,6 +39,7 @@ final feedRealtimeProvider = Provider.autoDispose<Object?>((ref) {
 final myReactionsProvider = FutureProvider.autoDispose<Set<String>>((
   ref,
 ) async {
+  if (AppConfig.useMock) return MockBackend.instance.myReactions();
   final user = supabase.auth.currentUser;
   if (user == null) return {};
   final rows = await supabase
@@ -48,6 +52,7 @@ final myReactionsProvider = FutureProvider.autoDispose<Set<String>>((
 /// Comentarios de un post específico.
 final postCommentsProvider = FutureProvider.autoDispose
     .family<List<PostComment>, String>((ref, postId) async {
+      if (AppConfig.useMock) return MockBackend.instance.postComments(postId);
       final rows = await supabase
           .from('post_comentarios')
           .select(_commentSelect)
@@ -66,6 +71,7 @@ final postDetailProvider = FutureProvider.autoDispose.family<Post, String>((
   ref,
   postId,
 ) async {
+  if (AppConfig.useMock) return MockBackend.instance.postDetail(postId);
   final row = await supabase
       .from('posts')
       .select(_postSelect)
@@ -84,6 +90,11 @@ Future<Post> createPost({
   Uint8List? imageBytes,
   String? imageExt,
 }) async {
+  if (AppConfig.useMock) {
+    final post = MockBackend.instance.createPost(content: content);
+    ref.invalidate(feedProvider);
+    return post;
+  }
   final user = supabase.auth.currentUser!;
   String? mediaUrl;
   String? mediaType;
@@ -122,6 +133,12 @@ Future<void> toggleLike({
   required String postId,
   required bool isLiked,
 }) async {
+  if (AppConfig.useMock) {
+    MockBackend.instance.toggleLike(postId: postId, isLiked: isLiked);
+    ref.invalidate(myReactionsProvider);
+    ref.invalidate(feedProvider);
+    return;
+  }
   final user = supabase.auth.currentUser!;
   if (isLiked) {
     await supabase
@@ -145,6 +162,12 @@ Future<PostComment> addComment({
   required String postId,
   required String content,
 }) async {
+  if (AppConfig.useMock) {
+    final c = MockBackend.instance.addComment(postId: postId, content: content);
+    ref.invalidate(postCommentsProvider(postId));
+    ref.invalidate(feedProvider);
+    return c;
+  }
   final user = supabase.auth.currentUser!;
   final inserted = await supabase
       .from('post_comentarios')
@@ -159,6 +182,11 @@ Future<void> deletePost({
   required WidgetRef ref,
   required String postId,
 }) async {
+  if (AppConfig.useMock) {
+    MockBackend.instance.deletePost(postId);
+    ref.invalidate(feedProvider);
+    return;
+  }
   await supabase.from('posts').delete().eq('id', postId);
   ref.invalidate(feedProvider);
 }

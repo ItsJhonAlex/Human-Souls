@@ -18,33 +18,37 @@ class ChatsListScreen extends ConsumerWidget {
     final inbox = ref.watch(inboxProvider);
     ref.watch(inboxRealtimeProvider);
 
-    return GradientBackground(
-      child: SafeArea(
-        child: Column(
-          children: [
-            _Header(),
-            Expanded(
-              child: inbox.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Error: $e')),
-                data: (items) => items.isEmpty
-                    ? _Empty()
-                    : RefreshIndicator(
-                        color: SoulColors.turquoise,
-                        backgroundColor: SoulColors.midnight,
-                        onRefresh: () async => ref.invalidate(inboxProvider),
-                        child: ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-                          itemCount: items.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, i) =>
-                              _InboxTile(item: items[i]),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: GradientBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              _Header(),
+              Expanded(
+                child: inbox.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Center(child: Text('Error: $e')),
+                  data: (items) => items.isEmpty
+                      ? _Empty()
+                      : RefreshIndicator(
+                          color: SoulColors.turquoise,
+                          backgroundColor: SoulColors.midnight,
+                          onRefresh: () async => ref.invalidate(inboxProvider),
+                          child: ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                            itemCount: items.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (context, i) =>
+                                _InboxTile(item: items[i]),
+                          ),
                         ),
-                      ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

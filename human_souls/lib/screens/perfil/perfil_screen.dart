@@ -895,6 +895,7 @@ void _showEditProfileSheet(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (ctx) {
       return StatefulBuilder(
@@ -935,16 +936,15 @@ void _showEditProfileSheet(
             }
           }
 
+          final mq = MediaQuery.of(ctx);
           return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
-            ),
+            padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
             child: Container(
               decoration: const BoxDecoration(
                 color: SoulColors.midnight,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + mq.viewPadding.bottom),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

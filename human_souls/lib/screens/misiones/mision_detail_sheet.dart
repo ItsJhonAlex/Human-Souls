@@ -18,6 +18,7 @@ void showMisionDetailSheet(
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (_) => MisionDetailSheet(mision: mision, existing: existing),
   );
@@ -120,21 +121,18 @@ class _MisionDetailSheetState extends ConsumerState<MisionDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final m = widget.mision;
+    final mq = MediaQuery.of(context);
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
       child: Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
-        ),
+        constraints: BoxConstraints(maxHeight: mq.size.height * 0.9),
         decoration: const BoxDecoration(
           color: SoulColors.midnight,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+          padding: EdgeInsets.fromLTRB(24, 12, 24, 28 + mq.viewPadding.bottom),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

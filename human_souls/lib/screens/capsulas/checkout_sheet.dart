@@ -15,6 +15,7 @@ void showCheckoutSheet(BuildContext context, WidgetRef ref, Capsula capsula) {
   showModalBottomSheet(
     context: context,
     isScrollControlled: true,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     builder: (_) => CheckoutSheet(capsula: capsula),
   );
@@ -91,12 +92,13 @@ class _CheckoutSheetState extends ConsumerState<CheckoutSheet> {
   @override
   Widget build(BuildContext context) {
     final c = widget.capsula;
+    final mq = MediaQuery.of(context);
     return Container(
       decoration: const BoxDecoration(
         color: SoulColors.midnight,
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + mq.viewPadding.bottom),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Container(
           width: 40,

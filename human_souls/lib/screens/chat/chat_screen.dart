@@ -99,12 +99,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       });
     });
 
-    return GradientBackground(
-      child: SafeArea(
-        child: Column(
-          children: [
-            _Header(profileAsync: otherProfile),
-            Expanded(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: true,
+      body: GradientBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              _Header(profileAsync: otherProfile),
+              Expanded(
               child: messagesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (e, _) => Center(child: Text('Error: $e')),
@@ -156,8 +159,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                 },
               ),
             ),
-            _ComposeBar(controller: _ctrl, sending: _sending, onSend: _send),
-          ],
+              _ComposeBar(controller: _ctrl, sending: _sending, onSend: _send),
+            ],
+          ),
         ),
       ),
     );

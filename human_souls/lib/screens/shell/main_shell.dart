@@ -33,10 +33,10 @@ class MainShell extends StatelessWidget {
     return Scaffold(
       extendBody: true,
       body: child,
-      bottomNavigationBar: ClipRRect(
+      bottomNavigationBar: ClipRect(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-          child: Container(
+          child: DecoratedBox(
             decoration: BoxDecoration(
               color: SoulColors.deepBlue.withValues(alpha: .55),
               border: const Border(
@@ -67,6 +67,7 @@ class MainShell extends StatelessWidget {
                             gradient: active ? SoulColors.ctaGradient : null,
                           ),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 t.icon,
